@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Link Not Found | LinkCloud{% endblock %}
+
+{% block content %}
+<div class="error-page-container">
+    <div class="error-card glass-panel">
+        <div class="error-badge">404 Error</div>
+        <div class="error-icon-glow">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+        </div>
+        <h1 class="error-title">Short Link Not Found</h1>
+        <p class="error-description">
+            {% if short_code %}
+                The short link code <strong class="code-pill">{{ short_code }}</strong> was not found in our SQLite database. It might have expired or was typed incorrectly.
+            {% else %}
+                The page or short link you are looking for does not exist on this server.
+            {% endif %}
+        </p>
+
+        <div class="error-actions">
+            <a href="{{ url_for('index') }}" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>Back to Home</span>
+            </a>
+            <a href="{{ url_for('analytics') }}" class="btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span>View Analytics</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

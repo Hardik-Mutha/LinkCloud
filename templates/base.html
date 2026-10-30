@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LinkCloud - Cloud-Based URL Shortener & Analytics{% endblock %}</title>
+    <meta name="description" content="LinkCloud is a modern, cloud-inspired URL shortener with real-time click tracking and analytics built with Python Flask and SQLite.">
+
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="dark-theme">
+    <!-- Glowing background ambient orbs -->
+    <div class="ambient-glow orb-purple"></div>
+    <div class="ambient-glow orb-blue"></div>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="brand" id="brand-logo">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">Link<span class="gradient-text">Cloud</span></span>
+                    <span class="brand-tag">v1.0</span>
+                </div>
+            </a>
+
+            <nav class="nav-links" id="main-nav">
+                <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" id="nav-home">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <span>Shortener</span>
+                </a>
+                <a href="{{ url_for('analytics') }}" class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}" id="nav-analytics">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                    <span>Analytics</span>
+                </a>
+            </nav>
+
+            <div class="nav-actions">
+                <span class="badge-sqlite" title="Backed by SQLite & Python Flask">
+                    <span class="status-dot"></span> SQLite Active
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="page-wrapper">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <span class="brand-name">Link<span class="gradient-text">Cloud</span></span>
+                <p class="footer-desc">A cloud-inspired URL shortener with real-time click analytics, built with Python Flask & SQLite.</p>
+            </div>
+            <div class="footer-pills">
+                <span class="tech-pill">Python Flask</span>
+                <span class="tech-pill">SQLite Database</span>
+                <span class="tech-pill">Parameterized SQL</span>
+                <span class="tech-pill">Real-Time Clicks</span>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 LinkCloud. Built for college & cloud computing demonstrations.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- QR Code Modal Component -->
+    <div id="qr-modal" class="modal-overlay" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card glass-panel">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon-badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="5" height="5" x="3" y="3" rx="1"/>
+                            <rect width="5" height="5" x="16" y="3" rx="1"/>
+                            <rect width="5" height="5" x="3" y="16" rx="1"/>
+                            <path d="M21 16h-3a2 2 0 0 0-2 2v3"/>
+                            <path d="M21 21v.01"/>
+                            <path d="M12 7v3a2 2 0 0 1-2 2H7"/>
+                            <path d="M3 12h.01"/>
+                            <path d="M12 3h.01"/>
+                            <path d="M12 16v.01"/>
+                            <path d="M16 12h1"/>
+                            <path d="M21 12v.01"/>
+                            <path d="M12 21v-1"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="modal-title" class="modal-title">Link QR Code</h3>
+                        <p class="modal-subtitle">Scan to access the shortened URL</p>
+                    </div>
+                </div>
+                <button type="button" id="modal-x-btn" class="modal-btn-close" aria-label="Close dialog">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- QR Image Display -->
+                <div class="qr-display-container">
+                    <div class="qr-image-wrapper">
+                        <img id="modal-qr-img" src="" alt="Shortened link QR code" width="200" height="200">
+                    </div>
+                    <div class="qr-target-info">
+                        <span class="code-pill" id="modal-short-code">------</span>
+                        <a href="#" id="modal-short-url" class="modal-link-preview" target="_blank" rel="noopener noreferrer">http://127.0.0.1:5000/...</a>
+                    </div>
+                </div>
+
+                <!-- Localhost Network Notice -->
+                <div class="modal-notice">
+                    <span class="notice-icon">💡</span>
+                    <div class="notice-content">
+                        <strong>Localhost & Cloud Notice:</strong>
+                        <p>This QR code contains your local development URL. Mobile devices can scan it if connected to the same local network, or globally once LinkCloud is deployed to a cloud server.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <a href="#" id="modal-download-btn" class="btn-primary" download="">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Download PNG</span>
+                </a>
+                <button type="button" id="modal-cancel-btn" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Main JavaScript Logic -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

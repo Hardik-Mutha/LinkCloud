@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}LinkCloud - Analytics Dashboard{% endblock %}
+
+{% block head_extra %}
+<!-- Chart.js for Click Analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-wrapper">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div>
+            <div class="pill-badge">
+                <span class="pill-icon">📊</span>
+                <span class="pill-text">Live SQLite Metrics</span>
+            </div>
+            <h1 class="page-title">Analytics <span class="gradient-text">Dashboard</span></h1>
+            <p class="page-subtitle">Track short link performance, visitor engagement, and redirection metrics in real time.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('index') }}" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Shorten New URL</span>
+            </a>
+            <button type="button" id="refresh-stats-btn" class="btn-secondary" title="Reload live stats">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Stat Metric Cards -->
+    <div class="stats-grid">
+        <!-- Metric 1: Total Links -->
+        <div class="stat-card glass-panel">
+            <div class="stat-header">
+                <span class="stat-label">Total Links</span>
+                <div class="stat-icon-wrapper purple">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value" id="stat-total-links">{{ total_links }}</div>
+            <span class="stat-subtext">Active shortened URLs in SQLite</span>
+        </div>
+
+        <!-- Metric 2: Total Clicks -->
+        <div class="stat-card glass-panel">
+            <div class="stat-header">
+                <span class="stat-label">Total Clicks</span>
+                <div class="stat-icon-wrapper indigo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value" id="stat-total-clicks">{{ total_clicks }}</div>
+            <span class="stat-subtext">Cumulative visitor redirections</span>
+        </div>
+
+        <!-- Metric 3: Top Performer -->
+        <div class="stat-card glass-panel">
+            <div class="stat-header">
+                <span class="stat-label">Top Performer</span>
+                <div class="stat-icon-wrapper amber">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value stat-highlight" id="stat-top-link">
+                {% if top_link %}
+                    {{ top_link['clicks'] }} <span class="stat-unit">clicks</span>
+                {% else %}
+                    0 <span class="stat-unit">clicks</span>
+                {% endif %}
+            </div>
+            <span class="stat-subtext">
+                {% if top_link %}
+                    Code: <strong class="code-pill">{{ top_link['short_code'] }}</strong>
+                {% else %}
+                    No link clicked yet
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Metric 4: Avg Clicks / Link -->
+        <div class="stat-card glass-panel">
+            <div class="stat-header">
+                <span class="stat-label">Avg Clicks / Link</span>
+                <div class="stat-icon-wrapper cyan">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                        <polyline points="17 6 23 6 23 12"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-value" id="stat-avg-clicks">
+                {% if total_links > 0 %}
+                    {{ (total_clicks / total_links) | round(1) }}
+                {% else %}
+                    0.0
+                {% endif %}
+            </div>
+            <span class="stat-subtext">Average engagement per link</span>
+        </div>
+    </div>
+
+    <!-- 7-Day Click Activity Trend Chart Card -->
+    <div class="chart-card glass-panel">
+        <div class="chart-header">
+            <div>
+                <div class="chart-title-group">
+                    <h2 class="chart-title">7-Day Click Activity Trend</h2>
+                    <span class="chart-badge">
+                        <span class="status-dot"></span>
+                        <span id="chart-total-label">{{ total_chart_clicks }} clicks this week</span>
+                    </span>
+                </div>
+                <p class="chart-subtitle">Daily visitor redirections recorded across all shortened links</p>
+            </div>
+        </div>
+
+        <div class="chart-content">
+            <!-- Chart Canvas Container -->
+            <div class="chart-canvas-wrapper {% if total_chart_clicks == 0 and total_clicks == 0 %}hidden{% endif %}" id="chart-canvas-wrapper">
+                <canvas id="clicksChart" height="230"></canvas>
+            </div>
+
+            <!-- Empty State for Chart -->
+            <div class="chart-empty-state {% if total_chart_clicks > 0 or total_clicks > 0 %}hidden{% endif %}" id="chart-empty-state">
+                <div class="chart-empty-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+                <h4 class="chart-empty-title">No Click Activity in the Last 7 Days</h4>
+                <p class="chart-empty-desc">Daily visitor engagement metrics will appear here once visitors start clicking your links.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden element carrying server-rendered chart data payload -->
+    <div id="chart-data-payload"
+         data-labels='{{ chart_labels | tojson }}'
+         data-values='{{ chart_data | tojson }}'
+         data-total='{{ total_chart_clicks }}'
+         style="display: none;"></div>
+
+    <!-- Links Table Card -->
+    <div class="table-card glass-panel">
+        <div class="table-toolbar">
+            <div class="table-title-group">
+                <h2 class="table-title">Individual Link Statistics</h2>
+                <span class="counter-badge" id="visible-count">{{ links|length }} links recorded</span>
+            </div>
+
+            <!-- Search and Filter bar -->
+            <div class="search-box">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                    type="text"
+                    id="table-search"
+                    placeholder="Search by code or original URL..."
+                    aria-label="Filter links"
+                >
+            </div>
+        </div>
+
+        <!-- Links Table -->
+        {% if links %}
+        <div class="table-responsive">
+            <table class="analytics-table" id="links-table">
+                <thead>
+                    <tr>
+                        <th>Short Code & Link</th>
+                        <th>Original Destination</th>
+                        <th class="text-center">Clicks</th>
+                        <th>Created At</th>
+                        <th>Last Clicked</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    {% for link in links %}
+                    <tr class="link-row" data-search="{{ link.short_code }} {{ link.original_url }}">
+                        <!-- Short Code & URL -->
+                        <td class="col-short">
+                            <div class="short-info">
+                                <span class="code-pill">{{ link.short_code }}</span>
+                                <a href="{{ base_url }}/{{ link.short_code }}" class="table-short-url" target="_blank" rel="noopener noreferrer">
+                                    {{ base_url }}/{{ link.short_code }}
+                                </a>
+                            </div>
+                        </td>
+
+                        <!-- Original Destination -->
+                        <td class="col-original">
+                            <span class="original-url-cell" title="{{ link.original_url }}">
+                                {{ link.original_url }}
+                            </span>
+                        </td>
+
+                        <!-- Total Clicks -->
+                        <td class="col-clicks text-center">
+                            <span class="click-badge {% if link.clicks > 10 %}high{% elif link.clicks > 0 %}active{% else %}zero{% endif %}">
+                                {{ link.clicks }}
+                            </span>
+                        </td>
+
+                        <!-- Created Timestamp -->
+                        <td class="col-date">
+                            <span class="date-text">{{ link.created_at }}</span>
+                        </td>
+
+                        <!-- Last Clicked -->
+                        <td class="col-date">
+                            {% if link.last_accessed %}
+                                <span class="date-text">{{ link.last_accessed }}</span>
+                            {% else %}
+                                <span class="date-muted">Never</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Action Buttons -->
+                        <td class="col-actions text-right">
+                            <div class="action-btn-group">
+                                <button
+                                    type="button"
+                                    class="btn-table-action btn-copy-inline"
+                                    data-copy-target="{{ base_url }}/{{ link.short_code }}"
+                                    title="Copy short link"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                                    </svg>
+                                    <span>Copy</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn-table-action btn-qr-inline"
+                                    data-short-code="{{ link.short_code }}"
+                                    data-short-url="{{ base_url }}/{{ link.short_code }}"
+                                    title="Generate & View QR Code"
+                                >
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="5" height="5" x="3" y="3" rx="1"/>
+                                        <rect width="5" height="5" x="16" y="3" rx="1"/>
+                                        <rect width="5" height="5" x="3" y="16" rx="1"/>
+                                        <path d="M21 16h-3a2 2 0 0 0-2 2v3"/>
+                                        <path d="M21 21v.01"/>
+                                        <path d="M12 7v3a2 2 0 0 1-2 2H7"/>
+                                    </svg>
+                                    <span>QR</span>
+                                </button>
+                                <a
+                                    href="{{ base_url }}/{{ link.short_code }}"
+                                    class="btn-table-action btn-visit-inline"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Open link in new tab to test redirect and click tracking"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15 3 21 3 21 9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                    <span>Visit</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon-wrapper">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+            </div>
+            <h3 class="empty-title">No Shortened Links Yet</h3>
+            <p class="empty-desc">Get started by shortening your first long URL on the home page. All metrics and click data will be tracked here in real time.</p>
+            <a href="{{ url_for('index') }}" class="btn-primary">
+                <span>Create Your First Short Link</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m13 17 5-5-5-5"/>
+                    <path d="M6 12h12"/>
+                </svg>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- No search results row -->
+        <div id="no-search-results" class="no-search-results hidden">
+            <p>No links match your search query. Try typing a different short code or URL.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
