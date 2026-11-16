@@ -1737,3 +1737,297 @@ h1, h2, h3, h4, h5, h6 {
     max-width: 400px;
 }
 
+/* ==========================================================================
+   Security & Authentication Styles
+   ========================================================================== */
+
+/* Navbar Admin & Auth Elements */
+.badge-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-accent);
+}
+
+.btn-logout-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(244, 63, 94, 0.1);
+    border: 1px solid rgba(244, 63, 94, 0.25);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #fca5a5;
+    text-decoration: none;
+    transition: var(--transition-fast);
+}
+
+.btn-logout-nav:hover {
+    background: rgba(244, 63, 94, 0.2);
+    border-color: rgba(244, 63, 94, 0.4);
+    color: #ffffff;
+}
+
+.btn-login-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none;
+    box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+    transition: var(--transition-fast);
+}
+
+.btn-login-nav:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.45);
+    color: #ffffff;
+}
+
+.nav-lock-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-muted);
+    margin-left: 0.2rem;
+}
+
+/* Home Page Auth Lock Notice */
+.auth-notice-banner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.2rem;
+    margin-bottom: 1.5rem;
+    background: rgba(139, 92, 246, 0.08);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 12px;
+}
+
+.auth-notice-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+    flex-shrink: 0;
+}
+
+.auth-notice-content {
+    flex: 1;
+}
+
+.auth-notice-title {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.15rem;
+}
+
+.auth-notice-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.auth-login-btn {
+    flex-shrink: 0;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.82rem;
+}
+
+/* Login Page Layout */
+.login-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 460px;
+    margin: 2.5rem auto 3.5rem;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.login-card {
+    width: 100%;
+    margin-top: 1.25rem;
+    padding: 2.25rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-medium);
+    box-shadow: var(--shadow-lg);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.login-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.1));
+    border: 1px solid var(--border-glow);
+    color: var(--accent-violet);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
+    margin-bottom: 1rem;
+}
+
+.login-title {
+    font-family: var(--font-heading);
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+
+.login-subtitle {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.field-icon {
+    position: absolute;
+    left: 0.9rem;
+    color: var(--text-muted);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 0.9rem 0.75rem 2.6rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    transition: var(--transition-fast);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.btn-block {
+    width: 100%;
+    justify-content: center;
+    padding: 0.8rem 1rem;
+    font-size: 0.92rem;
+    margin-top: 0.5rem;
+}
+
+.login-footer {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.login-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.75rem 0.9rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.login-notice .notice-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.login-notice strong {
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 0.15rem;
+}
+
+.login-notice p {
+    margin: 0;
+}
+
+.back-link {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: var(--transition-fast);
+}
+
+.back-link:hover {
+    color: var(--accent-purple);
+}
+
+@media (max-width: 640px) {
+    .auth-notice-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .auth-login-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .login-card {
+        padding: 1.5rem 1.25rem;
+    }
+}

@@ -99,11 +99,15 @@ function initShortenerForm() {
         `;
 
         try {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute("content") : "";
+
             const response = await fetch("/shorten", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json"
+                    "Accept": "application/json",
+                    "X-CSRF-Token": csrfToken
                 },
                 body: JSON.stringify({
                     url: rawUrl,
@@ -111,7 +115,29 @@ function initShortenerForm() {
                 })
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (_) {
+                data = {};
+            }
+
+            if (response.status === 401) {
+                const msg = data.error || "Administrator login required to shorten URLs.";
+                displayError(msg);
+                showToast(msg, "error");
+                setTimeout(() => {
+                    window.location.href = "/login?next=/";
+                }, 1500);
+                return;
+            }
+
+            if (response.status === 429) {
+                const msg = data.error || "Rate limit reached. Please wait a moment before trying again.";
+                displayError(msg);
+                showToast(msg, "error");
+                return;
+            }
 
             if (!response.ok || !data.success) {
                 const msg = data.error || "Failed to shorten the URL. Please verify the address.";
@@ -534,6 +560,13 @@ function initStatsRefresh() {
 
         try {
             const res = await fetch("/api/stats");
+            if (res.status === 401) {
+                showToast("Session expired. Please log in as administrator.", "error");
+                setTimeout(() => {
+                    window.location.href = "/login?next=/analytics";
+                }, 1500);
+                return;
+            }
             if (!res.ok) throw new Error("Failed to fetch stats");
             const data = await res.json();
 

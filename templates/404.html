@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}404 - Link Not Found | LinkCloud{% endblock %}
+{% block title %}{{ error_title or '404 - Link Not Found' }} | LinkCloud{% endblock %}
 
 {% block content %}
 <div class="error-page-container">
     <div class="error-card glass-panel">
-        <div class="error-badge">404 Error</div>
+        <div class="error-badge">{{ error_badge or '404 Error' }}</div>
         <div class="error-icon-glow">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
@@ -13,9 +13,11 @@
                 <line x1="9" y1="9" x2="15" y2="15"/>
             </svg>
         </div>
-        <h1 class="error-title">Short Link Not Found</h1>
+        <h1 class="error-title">{{ error_title or 'Short Link Not Found' }}</h1>
         <p class="error-description">
-            {% if short_code %}
+            {% if error_message %}
+                {{ error_message }}
+            {% elif short_code %}
                 The short link code <strong class="code-pill">{{ short_code }}</strong> was not found in our SQLite database. It might have expired or was typed incorrectly.
             {% else %}
                 The page or short link you are looking for does not exist on this server.

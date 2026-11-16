@@ -11,6 +11,10 @@ ENV/
 
 # SQLite database
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
 *.sqlite3
 
 # Operating System Files
@@ -28,6 +32,7 @@ Thumbs.db
 !.env.example
 *.pem
 *.key
+*.crt
 
 # Logs and test caches
 *.log

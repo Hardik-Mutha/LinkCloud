@@ -1,42 +1,80 @@
-# ☁️ LinkCloud – Cloud-Based URL Shortener with Analytics
+# ☁️ LinkCloud – Cloud-Based URL Shortener with Analytics & Security Hardening
 
-> **A beginner-friendly college project demonstrating URL shortening, click tracking, secure database queries, live analytics charts, custom aliases, and QR code generation using Python Flask, SQLite, and modern web technologies.**
+> **A secure, production-hardened college project demonstrating URL shortening, click tracking, parameterized SQLite database queries, live analytics charts, custom aliases, QR code generation, and OWASP-aligned Flask security engineering.**
 
 ---
 
 ## 📌 Project Overview
 
-**LinkCloud** is a lightweight, responsive web application that turns long URLs into compact, memorable short links while tracking visitor engagement. It features a dark navy and purple glassmorphic UI, real-time analytics, custom aliases, QR code generation, and safe database practices.
+**LinkCloud** is a modern, lightweight URL shortener that converts long URLs into compact, memorable short links while tracking visitor engagement. It features a dark navy and purple glassmorphic UI, real-time analytics, custom aliases, on-the-fly QR code generation, and robust security defenses.
 
-This project is tailored for academic evaluation, cloud computing coursework, and web development demonstrations.
+Tailored for academic evaluation, cloud computing coursework, and web development demonstrations, LinkCloud separates public access (redirection and QR code generation) from administrative privileges (short link creation, custom aliases, and analytics).
 
 ---
 
-## ✨ Features
+## 🛡️ Security Architecture & Engineering Controls
 
-1. **URL Shortening**: Paste any valid URL and generate an instantaneous short link tied to your local Flask server.
-2. **Safe URL Validation**: Validates URL structure, auto-prefixes `https://` if protocol is omitted, enforces HTTP/HTTPS only, and prevents recursive redirect loops.
-3. **Cryptographically Secure Short Codes**: Uses Python's `secrets` module to generate random alphanumeric codes ($62^6 \approx 56.8\text{ billion}$ combinations) with automatic collision handling.
-4. **Custom Short Link Aliases (New ✨)**:
-   - Create personalized, readable short links (e.g. `/my-project`, `/portfolio`).
-   - Validates input format (3–30 characters, alphanumeric, `-`, `_`).
-   - Protects reserved application routes (`/analytics`, `/shorten`, `/qr`, `/api`, etc.).
-   - Rejects duplicate aliases with friendly error messages.
-5. **QR Code Generator & Modal (New ✨)**:
-   - High-contrast PNG QR codes generated on-the-fly using Python's `qrcode` library.
-   - Accessible via dedicated **QR Code** buttons on both the home page and analytics dashboard.
-   - Displayed in a responsive, glassmorphic modal with a direct **Download PNG** button.
-   - Includes educational note on `localhost` network reachability vs. cloud deployment.
-6. **7-Day Click Activity Trend Chart (New ✨)**:
-   - Interactive line chart embedded into the Analytics dashboard.
-   - Displays daily click volume over the last 7 calendar days aggregated from `click_logs`.
-   - Built with responsive Chart.js with dark navy and purple gradients and empty-state handling.
-7. **Copy to Clipboard**: One-click copying with animated visual feedback (`Copied!` checkmark) and toast notifications.
-8. **Direct 302 Redirection**: Instantly forwards visitors from `/<short_code>` to the destination website.
-9. **Real-Time Click Tracking**: Increments link click counters in SQLite on every visit and logs timestamps and request headers.
-10. **Analytics Dashboard**: Displays total links, total clicks, top-performing links, average clicks per link, and a searchable table of individual link statistics.
-11. **Parameterized SQLite Queries**: Guarantees protection against SQL Injection vulnerabilities.
-12. **Polished 404 Error Page**: Friendly error handling when an unknown short link is requested.
+LinkCloud has been hardened according to web application security best practices:
+
+1. **Environment-Driven Secret Key**:
+   - Production (`FLASK_ENV=production`) strictly requires a cryptographically secure `SECRET_KEY` of at least 32 characters set via environment variable. Default or weak fallback keys raise a `RuntimeError` at startup.
+   - Development mode provides a safe local fallback key for frictionless evaluation.
+2. **Strict Production Debug Mode Enforcement**:
+   - `debug=True` is strictly disabled in production environments to prevent arbitrary code execution via interactive debuggers.
+3. **Administrator Authentication & Hashed Credentials**:
+   - Admin credentials (`ADMIN_USERNAME` and `ADMIN_PASSWORD_HASH`) are configured via environment variables.
+   - Passwords are verified using cryptographic password hashing (PBKDF2/scrypt via `werkzeug.security`).
+   - Session fixation is mitigated by regenerating sessions and tokens upon login.
+4. **Role-Based Endpoint Protection**:
+   - `/analytics` and `/api/stats` are protected behind administrator authentication; unauthenticated requests are redirected or receive `401 Unauthorized`.
+   - `/shorten` requires administrator authentication for link and alias creation.
+   - Public short-link redirection (`/<short_code>`) and QR codes (`/qr/<short_code>`) remain 100% accessible to public visitors without requiring login.
+5. **Session Cookie Hardening**:
+   - `SESSION_COOKIE_HTTPONLY = True`: Mitigates cookie theft via cross-site scripting (XSS).
+   - `SESSION_COOKIE_SAMESITE = "Lax"`: Defends against cross-site request forgery.
+   - `SESSION_COOKIE_SECURE = True`: Enforces transmission exclusively over HTTPS in production.
+   - `PERMANENT_SESSION_LIFETIME = timedelta(hours=8)`: Limits session exposure window.
+6. **Synchronizer Token CSRF Protection**:
+   - Per-session cryptographically random tokens (`secrets.token_hex(32)`) protect all state-changing requests (`POST`, `PUT`, `DELETE`).
+   - Validated server-side using constant-time string comparison (`hmac.compare_digest`).
+   - Integrated into web forms via hidden input and AJAX fetch calls via `X-CSRF-Token` headers.
+7. **Sliding-Window Rate Limiting & Request Throttling**:
+   - In-memory rate limiting applied per client IP:
+     - Public Redirects (`/<short_code>`): 120 requests / min.
+     - Public QR Generation (`/qr/<short_code>`): 60 requests / min (mitigates CPU/image exhaustion).
+     - Administrator Login (`/login`): 10 requests / min (mitigates brute-force attacks).
+     - Link Creation (`/shorten`): 30 requests / min.
+   - Returns `HTTP 429 Too Many Requests` with `Retry-After` headers.
+8. **Request Body Size Limits**:
+   - `MAX_CONTENT_LENGTH = 16 * 1024` (16 KB payload cap) prevents denial-of-service memory exhaustion, returning `HTTP 413 Payload Too Large`.
+9. **Defense-in-Depth HTTP Security Headers**:
+   - `X-Content-Type-Options: nosniff`: Prevents MIME-type confusion attacks.
+   - `X-Frame-Options: DENY`: Blocks clickjacking attacks.
+   - `Content-Security-Policy`: Restricts scripts, styles, fonts, and frame embedding to authorized origins.
+   - `Referrer-Policy: strict-origin-when-cross-origin`: Minimizes referrer leakage.
+   - `Strict-Transport-Security: max-age=31536000; includeSubDomains`: Enforces HTTPS in production.
+10. **Privacy & Non-Invasive Tracking**:
+    - The SQLite `click_logs` table records only timestamps, referrers, and user-agent strings. IP addresses are **never stored** in the database.
+    - Public APIs do not expose raw click logs or sensitive server details.
+11. **Strict URL Destination Validation & Anti-SSRF**:
+    - Redirect destinations are restricted strictly to `http://` and `https://`.
+    - Dangerous URI schemes (`javascript:`, `data:`, `file:`, `ftp:`) are blocked.
+    - Embedded credentials (`https://user:pass@evil.com`) and CRLF characters (`\r`, `\n`) are rejected.
+    - Loopback recursion to self or localhost is prohibited.
+    - Destination URLs are **never fetched server-side**, eliminating Server-Side Request Forgery (SSRF).
+12. **Open Redirect Prevention**:
+    - Post-login `next` redirection validates that target paths are strictly relative (preventing malicious redirects to external sites).
+
+---
+
+## ✨ Application Features
+
+- **Lightning-Fast URL Shortening**: Converts any valid URL into a compact short link ($62^6 \approx 56.8\text{ billion}$ random code combinations).
+- **Custom Short Link Aliases**: Administrators can define personalized paths (e.g. `/portfolio`, `/cloud-demo`) with collision and reserved-route checking.
+- **On-The-Fly QR Codes**: Scannable, high-contrast PNG QR codes generated dynamically with download capability.
+- **7-Day Click Activity Trend Chart**: Responsive line chart powered by Chart.js aggregating daily redirection traffic.
+- **Live Analytics Dashboard**: Displays total links, total clicks, top performers, engagement metrics, and searchable links table.
+- **Dark Glassmorphic UI**: High-contrast, responsive user experience built with modern CSS glassmorphism, ambient light orbs, and Outfit/Inter typography.
 
 ---
 
@@ -44,13 +82,14 @@ This project is tailored for academic evaluation, cloud computing coursework, an
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Backend** | Python 3.9+ & Flask | Routing, request processing, redirection, and validation |
-| **QR Code Engine** | `qrcode` & `Pillow` | Generating scannable PNG QR codes |
-| **Database** | SQLite 3 (`linkcloud.db`) | Storing links, click counters, and timestamps |
-| **Frontend Structure** | HTML5 Semantic Elements | Jinja2 templated layout (`base.html`, `index.html`, etc.) |
-| **Styling** | Vanilla CSS3 | Dark navy & purple glassmorphic theme, responsive layouts |
+| **Backend Framework** | Python 3.9+ & Flask 3.x | Request handling, routing, session security, and validation |
+| **WSGI Server** | Gunicorn | Production WSGI HTTP server for Linux/Ubuntu |
+| **Reverse Proxy** | Nginx | TLS termination, static asset serving, and reverse proxy |
+| **Database** | SQLite 3 (`linkcloud.db`) | Parameterized SQL query storage for links and click counters |
+| **Security & Hashing** | Werkzeug & Secrets | Password hashing, ProxyFix, and token generation |
+| **QR Code Engine** | `qrcode` & `Pillow` | Scannable PNG QR code rendering |
 | **Data Visualization** | Chart.js | 7-day click trend graph |
-| **Client Logic** | Vanilla JavaScript | Asynchronous fetch, clipboard API, modal handling, real-time search |
+| **Frontend** | HTML5 / CSS3 / Vanilla JS | Responsive glassmorphic layout, CSRF handling, and modal dialogs |
 
 ---
 
@@ -58,115 +97,254 @@ This project is tailored for academic evaluation, cloud computing coursework, an
 
 ```text
 LinkCloud/
-├── app.py                # Main Flask application, routes, QR generator, and SQLite logic
-├── requirements.txt      # Python dependencies (Flask, qrcode, pillow)
-├── linkcloud.db          # SQLite database (auto-created on startup)
-├── .gitignore            # Git exclusion rules (virtual environments, caches, DB)
-├── README.md             # Project documentation and setup guide
+├── app.py                # Main Flask application, security middleware, and routes
+├── requirements.txt      # Python dependencies (Flask, qrcode, pillow, gunicorn, python-dotenv)
+├── linkcloud.db          # SQLite database (auto-created on startup, ignored by git)
+├── .env.example          # Template environment file with safe placeholders
+├── .gitignore            # Git exclusion rules (.env, *.db, *.pem, *.key, caches)
+├── README.md             # Project documentation and deployment guide
+├── tests/                # Automated security test suite
+│   └── test_security.py  # 26 automated unit & integration security tests
 ├── templates/            # HTML templates using Jinja2
-│   ├── base.html         # Master layout with navigation, QR modal, ambient orbs, and footer
-│   ├── index.html        # Home page with URL shortener, custom alias field, and result card
-│   ├── analytics.html    # Analytics dashboard with metric cards, 7-day chart, and table
-│   └── 404.html          # Custom 404 error page for invalid short codes
+│   ├── base.html         # Master layout, navigation, CSRF meta, and QR modal
+│   ├── index.html        # Home page with shortener form and auth status banner
+│   ├── login.html        # Glassmorphic administrator sign-in page
+│   ├── analytics.html    # Protected analytics dashboard with 7-day chart
+│   └── 404.html          # Custom error page (404, 400, 413, 429)
 └── static/               # Static assets
     ├── css/
-    │   └── style.css     # Dark navy & purple CSS design system, modal & chart styling
+    │   └── style.css     # Glassmorphic CSS design system and auth styles
     └── js/
-        └── main.js       # Asynchronous client logic, QR modal, Chart.js, and events
+        └── main.js       # Asynchronous client logic, CSRF headers, and QR modal
 ```
 
 ---
 
-## 🗄️ Database Schema
+## 🚀 How to Run Locally (Development Mode)
 
-The application uses two SQLite tables managed via parameterized queries:
-
-### 1. `urls` Table
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique link identifier |
-| `short_code` | `TEXT` | `UNIQUE NOT NULL` | Generated code or custom alias (e.g. `k7X9pQ` or `my-project`) |
-| `original_url` | `TEXT` | `NOT NULL` | The full destination URL |
-| `clicks` | `INTEGER` | `DEFAULT 0` | Total redirection counter |
-| `created_at` | `TIMESTAMP`| `DEFAULT CURRENT_TIMESTAMP` | Link generation timestamp |
-| `last_accessed`| `TIMESTAMP`| `NULL` | Most recent click timestamp |
-
-### 2. `click_logs` Table
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Click log identifier |
-| `short_code` | `TEXT` | `NOT NULL, FOREIGN KEY` | References `urls(short_code)` |
-| `clicked_at` | `TIMESTAMP`| `DEFAULT CURRENT_TIMESTAMP` | Exact redirect time |
-| `referrer` | `TEXT` | `NULL` | HTTP Referrer header |
-| `user_agent` | `TEXT` | `NULL` | Browser User-Agent header |
-
----
-
-## 🚀 How to Run the Application Locally
-
-Follow these steps to run the application on your computer:
-
-### 1. Open Terminal and Navigate to Directory
+### 1. Navigate to Project Directory
 ```bash
 cd /Users/wisermonk/Documents/LinkCloud
 ```
 
-### 2. Activate Python Virtual Environment
-- **On macOS / Linux:**
+### 2. Activate Virtual Environment
+- **macOS / Linux:**
   ```bash
   source .venv/bin/activate
   ```
-- **On Windows (Command Prompt):**
+- **Windows:**
   ```cmd
   .venv\Scripts\activate.bat
   ```
 
-### 3. Install Updated Dependencies
-Install Flask, qrcode, and Pillow from `requirements.txt`:
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Start the Application
-Run the Flask server:
+### 4. Configure Local Environment (Optional)
+LinkCloud runs out-of-the-box with safe development defaults:
+- **Default Username**: `admin`
+- **Default Password**: `admin123`
+
+To customize local credentials, copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+
+### 5. Start the Development Server
 ```bash
 python3 app.py
 ```
+> **Note on Port Conflicts**: If port 5000 is occupied by macOS AirPlay, LinkCloud automatically selects port 5001, or you can specify `PORT=5001 python3 app.py`.
 
-> **Note on Port Conflicts (macOS AirPlay / In-Use Ports):**
-> If port 5000 is occupied by another application or macOS's "AirPlay Receiver", specify an alternate port via the `PORT` environment variable:
-> ```bash
-> PORT=5001 python3 app.py
-> ```
-
-### 5. Access LinkCloud in Your Browser
+### 6. Access in Browser
 - **Home & Shortener**: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+- **Admin Login**: [http://127.0.0.1:5000/login](http://127.0.0.1:5000/login)
 - **Analytics Dashboard**: [http://127.0.0.1:5000/analytics](http://127.0.0.1:5000/analytics)
 
 ---
 
-## 🧪 How to Manually Test Each Feature
+## 🧪 Running Automated Security Tests
 
-### Test 1: Custom Short Link Aliases
-1. Open [http://127.0.0.1:5000](http://127.0.0.1:5000).
-2. In the long URL field, enter: `https://github.com`.
-3. In the **Custom Alias (Optional)** field, type: `my-github`.
-4. Click **Shorten URL**.
-5. Verify the generated short URL is `http://127.0.0.1:5000/my-github`.
-6. Try repeating with the reserved alias `analytics` or `shorten`; verify a friendly error explains that the route is reserved.
+LinkCloud includes a comprehensive automated test suite in `tests/test_security.py` verifying all security controls:
 
-### Test 2: QR Code Generator & Download
-1. Click the **QR Code** button on the result card, or in the Analytics table next to any link.
-2. Verify the glassmorphic modal opens with:
-   - Scannable QR code preview.
-   - The embedded short URL.
-   - Localhost vs. cloud explanation notice.
-3. Click **Download PNG** and confirm that `linkcloud-qr-<short_code>.png` downloads to your computer.
+```bash
+python3 -m unittest discover tests
+```
+or
+```bash
+python3 -m unittest tests/test_security.py
+```
 
-### Test 3: 7-Day Click Analytics Chart
-1. Click the short link or visit `http://127.0.0.1:5000/my-github` in your browser.
-2. Navigate to [http://127.0.0.1:5000/analytics](http://127.0.0.1:5000/analytics).
-3. Observe the **7-Day Click Activity Trend** chart:
-   - Dates are displayed along the X-axis.
-   - Click count is plotted on the Y-axis.
-   - Hover over the plotted point to see the interactive tooltip.
+### Test Coverage Highlights:
+- **Production Key Checks**: Missing or weak `SECRET_KEY` rejection.
+- **Debug Mode Prevention**: Confirms debug mode cannot be enabled in production.
+- **Authentication**: Valid and invalid credential verification, rate limiting, and safe `next` redirects.
+- **Authorization**: Unauthenticated access to `/analytics`, `/api/stats`, and `/shorten` blocked.
+- **Public Routes**: Direct 302 redirection and QR code generation without authentication.
+- **CSRF Defense**: Missing or forged tokens rejected with HTTP 400.
+- **Rate Limiting**: Sliding-window throttling returning HTTP 429 and `Retry-After`.
+- **Payload Limits**: Payloads over 16 KB rejected with HTTP 413.
+- **Headers & SSRF**: Security headers confirmed; loopback, embedded credentials, and malicious schemes blocked.
+
+---
+
+## 🌐 Production Deployment Guide (Ubuntu EC2 + Gunicorn + Nginx)
+
+Follow these step-by-step instructions to safely deploy LinkCloud to an AWS EC2 Ubuntu instance:
+
+### Step 1: Update Server & Install System Dependencies
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3 python3-pip python3-venv nginx sqlite3 certbot python3-certbot-nginx git
+```
+
+### Step 2: Clone or Copy Project Files
+Place the project into `/var/www/linkcloud`:
+```bash
+sudo mkdir -p /var/www/linkcloud
+sudo chown -R ubuntu:ubuntu /var/www/linkcloud
+cd /var/www/linkcloud
+# (Copy files or git clone here)
+```
+
+### Step 3: Set Up Python Virtual Environment
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### Step 4: Configure Production Environment Variables (`.env`)
+Create `/var/www/linkcloud/.env` with strict permissions:
+```bash
+cp .env.example .env
+chmod 600 .env
+```
+
+Generate secure secrets and update `.env`:
+```bash
+# 1. Generate a 32-byte hexadecimal SECRET_KEY:
+python3 -c "import secrets; print(secrets.token_hex(32))"
+
+# 2. Generate a secure PBKDF2 password hash for your chosen password:
+python3 -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('YOUR_CHOSEN_PASSWORD', method='pbkdf2:sha256'))"
+```
+
+Edit `.env` (`nano .env`):
+```ini
+FLASK_ENV=production
+FLASK_DEBUG=0
+SECRET_KEY=PASTE_GENERATED_32_BYTE_HEX_KEY
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=PASTE_GENERATED_PASSWORD_HASH
+SESSION_COOKIE_SECURE=1
+BEHIND_PROXY=1
+RATE_LIMIT_REDIRECT_PER_MIN=120
+RATE_LIMIT_QR_PER_MIN=60
+RATE_LIMIT_LOGIN_PER_MIN=10
+RATE_LIMIT_SHORTEN_PER_MIN=30
+PORT=5000
+```
+
+### Step 5: Configure Permissions for SQLite Database
+Ensure the web server user (`www-data` or `ubuntu`) has read and write access to the database directory and file:
+```bash
+sudo chown -R www-data:www-data /var/www/linkcloud
+sudo chmod 750 /var/www/linkcloud
+sudo chmod 660 /var/www/linkcloud/linkcloud.db
+```
+
+### Step 6: Create Systemd Service for Gunicorn
+Create `/etc/systemd/system/linkcloud.service`:
+```bash
+sudo nano /etc/systemd/system/linkcloud.service
+```
+
+Paste the following configuration:
+```ini
+[Unit]
+Description=LinkCloud URL Shortener (Gunicorn WSGI)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/linkcloud
+EnvironmentFile=/var/www/linkcloud/.env
+ExecStart=/var/www/linkcloud/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:5000 \
+    --access-logfile /var/log/linkcloud/access.log \
+    --error-logfile /var/log/linkcloud/error.log \
+    --timeout 30 \
+    app:app
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Create log directory and start service:
+```bash
+sudo mkdir -p /var/log/linkcloud
+sudo chown -R www-data:www-data /var/log/linkcloud
+
+sudo systemctl daemon-reload
+sudo systemctl enable linkcloud
+sudo systemctl start linkcloud
+sudo systemctl status linkcloud
+```
+
+### Step 7: Configure Nginx Reverse Proxy
+Create `/etc/nginx/sites-available/linkcloud`:
+```bash
+sudo nano /etc/nginx/sites-available/linkcloud
+```
+
+Paste the configuration:
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com www.your-domain.com; # Or your EC2 Public DNS / Elastic IP
+
+    client_max_body_size 1M;
+
+    # Static file serving handled directly by Nginx for performance
+    location /static/ {
+        alias /var/www/linkcloud/static/;
+        expires 7d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # Proxy all dynamic application traffic to Gunicorn
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_connect_timeout 30s;
+        proxy_read_timeout 30s;
+    }
+}
+```
+
+Enable site and restart Nginx:
+```bash
+sudo ln -sf /etc/nginx/sites-available/linkcloud /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+### Step 8: Enable SSL / HTTPS with Let's Encrypt Certbot
+```bash
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+```
+Certbot will automatically install the certificate, enable TLS, and redirect HTTP traffic to HTTPS.

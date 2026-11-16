@@ -22,6 +22,8 @@
     <!-- Main URL Shortening Form Card -->
     <div class="shortener-card glass-panel" id="shortener-container">
         <form id="shorten-form" method="POST" action="{{ url_for('shorten_url') }}" novalidate>
+            <!-- CSRF Protection Token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="input-group">
                 <div class="input-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -161,7 +163,8 @@
                 <span class="preview-text" id="original-url-text" title="{{ original_url or '' }}">{{ original_url or '' }}</span>
             </div>
 
-            <!-- Card Bottom Navigation -->
+            {% if session.get('is_admin') %}
+            <!-- Card Bottom Navigation (Admins Only) -->
             <div class="result-footer">
                 <a href="{{ url_for('analytics') }}" class="link-analytics">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -172,6 +175,7 @@
                     <span>View Link in Analytics Dashboard &rarr;</span>
                 </a>
             </div>
+            {% endif %}
         </div>
     </div>
 
